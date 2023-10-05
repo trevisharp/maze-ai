@@ -185,9 +185,6 @@ public class MazeView : View
             connect(space, space?.Right, g);
             connect(space, space?.Bottom, g);
         }
-        
-        if (space == Maze.Root)
-            g.FillRectangle(x + 15, y + 15, dx - 30, dy - 30, Brushes.Yellow);
 
         if (space.Left is null)
             g.FillRectangle(x, y, 5, dy, Brushes.Black);

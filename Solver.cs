@@ -7,6 +7,6 @@ public class Solver
     
     public void Solve()
     {
-        // TODO
+        
     }
 }
