@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Collections.Generic;
 
 using Pamella;
-using System.Xml;
 
 App.Open(new MazeView());
 
@@ -11,7 +10,13 @@ public class Maze
 {
     public Space Root { get; set; }
     public List<Space> Spaces { get; } = new();
-    public static Maze Prim()
+    public void Reset()
+    {
+        foreach (var space in Spaces)
+            space.Reset();
+    }
+
+    public static Maze Prim(int sx, int sy)
     {
         Maze maze = new Maze();
         var priority = new PriorityQueue<(int i, int j), byte>();
@@ -37,8 +42,6 @@ public class Maze
             connect(pos.i, pos.j);
         }
 
-        maze.Spaces[Random.Shared.Next(maze.Spaces.Count)].Exit = true;
-
         return maze;
 
         Space add(int i, int j)
@@ -48,7 +51,8 @@ public class Maze
                 var newSpace = new Space
                 {
                     X = i,
-                    Y = j
+                    Y = j,
+                    Exit = sx == i && sy == j
                 };
                 maze.Spaces.Add(newSpace);
                 vertices[i, j] = newSpace;
@@ -128,16 +132,25 @@ public class Space
     public bool Visited { get; set; } = false;
     public bool IsSolution { get; set; } = false;
     public bool Exit { get; set; } = false;
+
+    public void Reset()
+    {
+        IsSolution = false;
+        Visited = false;
+    }
 }
 
 public class MazeView : View
 {
+    int solx = 20;
+    int soly = 20;
+    bool update = false;
     public Maze Maze { get; set; }
     Solver Solver = new Solver();
 
     protected override void OnStart(IGraphics g)
     {
-        this.Maze = Maze.Prim();
+        this.Maze = Maze.Prim(solx, soly);
         this.Solver.Maze = this.Maze;
         g.SubscribeKeyDownEvent(key =>
         {
@@ -146,22 +159,49 @@ public class MazeView : View
             
             if (key == Input.Space)
             {
-                this.Maze = Maze.Prim();
+                this.Maze = Maze.Prim(solx, soly);
                 this.Solver.Maze = this.Maze;
+                Invalidate();
             }
 
             if (key == Input.S)
             {
                 Solver.Solve();
+                Invalidate();
+            }
+
+            if (key == Input.U)
+            {
+                update = !update;
             }
         });
     }
 
-    protected override void OnFrame(IGraphics g)
+    protected override void OnRender(IGraphics g)
     {
         g.Clear(Color.Black);
         foreach (var space in Maze.Spaces)
             drawSpace(space, g);
+    }
+
+    protected override void OnFrame(IGraphics g)
+    {
+        if (update)
+        {
+            var dx = g.Width / 48;
+            var dy = g.Height / 27;
+            solx = (int)(g.Cursor.X / dx);
+            soly = (int)(g.Cursor.Y / dy);
+
+            foreach (var space in Maze.Spaces)
+            {
+                space.Exit = space.X == solx && space.Y == soly;
+            }
+            Maze.Reset();
+            Solver.Solve();
+
+            Invalidate();
+        }
     }
 
     void drawSpace(Space space, IGraphics g)
