@@ -145,6 +145,7 @@ public class MazeView : View
     int solx = 20;
     int soly = 20;
     bool update = false;
+    bool solve = false;
     public Maze Maze { get; set; }
     Solver Solver = new Solver();
 
@@ -166,8 +167,12 @@ public class MazeView : View
 
             if (key == Input.S)
             {
-                Solver.Solve();
-                Invalidate();
+                solve = !solve;
+                if (!solve)
+                {
+                    Maze.Reset();
+                    Invalidate();
+                }
             }
 
             if (key == Input.U)
@@ -197,6 +202,12 @@ public class MazeView : View
             {
                 space.Exit = space.X == solx && space.Y == soly;
             }
+
+            Invalidate();
+        }
+
+        if (solve)
+        {
             Maze.Reset();
             Solver.Solve();
 
