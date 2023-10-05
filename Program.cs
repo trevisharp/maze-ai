@@ -1,12 +1,15 @@
 using System;
+using System.Drawing;
 using System.Collections.Generic;
 
 using Pamella;
+using System.Xml;
 
 App.Open(new MazeView());
 
 public class Maze
 {
+    public Space Root { get; set; }
     public List<Space> Spaces { get; } = new();
     public static Maze Prim()
     {
@@ -26,10 +29,7 @@ public class Maze
             }
         }
 
-        add(
-            Random.Shared.Next(48),
-            Random.Shared.Next(27)
-        );
+        maze.Root = add(0, 0);
 
         while (priority.Count > 0)
         {
@@ -37,13 +37,19 @@ public class Maze
             connect(pos.i, pos.j);
         }
 
+        maze.Spaces[Random.Shared.Next(maze.Spaces.Count)].Exit = true;
+
         return maze;
 
         Space add(int i, int j)
         {
             if (vertices[i, j] is null)
             {
-                var newSpace = new Space();
+                var newSpace = new Space
+                {
+                    X = i,
+                    Y = j
+                };
                 maze.Spaces.Add(newSpace);
                 vertices[i, j] = newSpace;
                 verticeCount++;
@@ -113,27 +119,140 @@ public class Maze
 
 public class Space
 {
+    public int X { get; set; }
+    public int Y { get; set; }
     public Space Top { get; set; } = null;
     public Space Left { get; set; } = null;
     public Space Right { get; set; } = null;
     public Space Bottom { get; set; } = null;
     public bool Visited { get; set; } = false;
+    public bool IsSolution { get; set; } = false;
     public bool Exit { get; set; } = false;
 }
 
 public class MazeView : View
 {
     public Maze Maze { get; set; }
+    Solver Solver = new Solver();
 
     protected override void OnStart(IGraphics g)
     {
         this.Maze = Maze.Prim();
+        this.Solver.Maze = this.Maze;
+        g.SubscribeKeyDownEvent(key =>
+        {
+            if (key == Input.Escape)
+                App.Close();
+            
+            if (key == Input.Space)
+            {
+                this.Maze = Maze.Prim();
+                this.Solver.Maze = this.Maze;
+            }
+
+            if (key == Input.S)
+            {
+                Solver.Solve();
+            }
+        });
     }
 
     protected override void OnFrame(IGraphics g)
     {
-        
+        g.Clear(Color.Black);
+        foreach (var space in Maze.Spaces)
+            drawSpace(space, g);
     }
 
-    
+    void drawSpace(Space space, IGraphics g)
+    {
+        if (space is null)
+            return;
+        
+        var dx = g.Width / 48;
+        var dy = g.Height / 27;
+        var x = space.X * dx;
+        var y = space.Y * dy;
+        g.FillRectangle(x, y, dx, dy,
+            space.Exit ? Brushes.Green :
+            space.Visited ? Brushes.Blue : Brushes.White
+        );
+
+        if (space.IsSolution)
+        {
+            connect(space, space?.Top, g);
+            connect(space, space?.Left, g);
+            connect(space, space?.Right, g);
+            connect(space, space?.Bottom, g);
+        }
+        
+        if (space == Maze.Root)
+            g.FillRectangle(x + 15, y + 15, dx - 30, dy - 30, Brushes.Yellow);
+
+        if (space.Left is null)
+            g.FillRectangle(x, y, 5, dy, Brushes.Black);
+        if (space.Top is null)
+            g.FillRectangle(x, y, dx, 5, Brushes.Black);
+    }
+
+    void connect(Space a, Space b, IGraphics g)
+    {
+        if (a is null || b is null)
+            return;
+        
+        if (!a.IsSolution || !b.IsSolution)
+            return;
+
+        var dx = g.Width / 48;
+        var dy = g.Height / 27;
+
+        var x1 = a.X * dx + dx / 2;
+        var y1 = a.Y * dy + dy / 2;
+        
+        var x2 = b.X * dx + dx / 2;
+        var y2 = b.Y * dy + dy / 2;
+
+        var wid = x2 - x1;
+        var hei = y2 - y1;
+        if (wid < 0)
+            wid = -wid;
+        if (hei < 0)
+            hei = -hei;
+
+        var x = 0;
+        var y = 0;
+        
+        if (wid == 0)
+        {
+            wid = 12;
+            x = x1 - 6;
+            if (y1 < y2)
+            {
+                y = y1 - 3;
+                hei += 6;
+            }
+            else
+            {
+                y = y2 - 3;
+                hei += 6;
+            }
+        }
+        if (hei == 0)
+        {
+            hei = 12;
+            y = y1 - 6;
+            if (x1 < x2)
+            {
+                x = x1 - 3;
+                wid += 6;
+            }
+            else
+            {
+                x = x2 - 3;
+                wid += 6;
+            }
+        }
+
+        g.FillRectangle(x, y, wid, hei, Brushes.Red);
+    }
 }
