@@ -16,7 +16,9 @@ public class Solver
 
         if (RogueMode)
         {
-            rogueAStar(Maze.Root, goal);
+            if (Option % 2 == 0)
+                rogueDijkstra(Maze.Root, goal);
+            else rogueAStar(Maze.Root, goal);
         }
         else
         {
@@ -193,6 +195,91 @@ public class Solver
         start.IsSolution = true;
     }
     
+    private void rogueDijkstra(Space start, Space goal)
+    {
+        var queue = new PriorityQueue<(Space space, int jumpCost), float>();
+        var distMap = new Dictionary<(Space space, int jumpCost), float>();
+        var comeMap = new Dictionary<(Space space, int jumpCost), (Space space, int jumpCost)>();
+
+        var solution = (goal, 0);
+        distMap[(start, 1)] = 0;
+        queue.Enqueue((start, 1), 0);
+
+        while (queue.Count > 0)
+        {
+            var crr = queue.Dequeue();
+            crr.space.Visited = true;
+            if (crr.space == goal)
+            {
+                solution = (goal, crr.jumpCost);
+                break;
+            }
+            
+            var neighborhood = new Space[] {
+                crr.space.Top, crr.space.Bottom, crr.space.Left, crr.space.Right
+            };
+            foreach (var neighbor in neighborhood)
+            {
+                if (neighbor is null)
+                    continue;
+                var next = (neighbor, crr.jumpCost);
+
+                if (!distMap.ContainsKey(next))
+                {
+                    distMap.Add(next, float.PositiveInfinity);
+                    comeMap.Add(next, (null, 0));
+                }
+                
+                var newDist = distMap[crr] + 1;
+                var oldDist = distMap[next];
+                if (newDist > oldDist)
+                    continue;
+                
+                distMap[next] = newDist;
+                comeMap[next] = crr;
+
+                var dx = neighbor.X - goal.X;
+                var dy = neighbor.Y - goal.Y;
+                var h = MathF.Sqrt(dx * dx + dy * dy);
+                queue.Enqueue(next, newDist + h);
+            }
+
+            var jumpNeighborhood = new Space[] {
+                crr.space.RealTop, crr.space.RealBottom, crr.space.RealLeft, crr.space.RealRight
+            };
+            foreach (var neighbor in jumpNeighborhood)
+            {
+                if (neighbor is null)
+                    continue;
+                var next = (neighbor, crr.jumpCost + 2);
+                
+                if (!distMap.ContainsKey(next))
+                {
+                    distMap.Add(next, float.PositiveInfinity);
+                    comeMap.Add(next, (null, 0));
+                }
+                
+                var newDist = distMap[crr] + crr.jumpCost;
+                var oldDist = distMap[next];
+                if (newDist > oldDist)
+                    continue;
+                
+                distMap[next] = newDist;
+                comeMap[next] = crr;
+                queue.Enqueue(next, newDist);
+            }
+        }
+
+        var it = solution;
+        while (it != (start, 1))
+        {
+            it.goal.IsSolution = true;
+            it = comeMap[it];
+        }
+        start.IsSolution = true;
+    }
+
+
     private void rogueAStar(Space start, Space goal)
     {
         var queue = new PriorityQueue<(Space space, int jumpCost), float>();
