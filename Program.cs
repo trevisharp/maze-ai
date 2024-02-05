@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Collections.Generic;
 
 using Pamella;
+using System.Runtime.InteropServices.JavaScript;
 
 App.Open(new MazeView());
 
@@ -40,6 +41,24 @@ public class Maze
         {
             var pos = priority.Dequeue();
             connect(pos.i, pos.j);
+        }
+
+        for (int i = 0; i < 48; i++)
+        {
+            for (int j = 0; j < 27; j++)
+            {
+                if (j > 0)
+                    vertices[i, j].RealTop = vertices[i, j - 1];
+                if (j < 26)
+                    vertices[i, j].RealBottom = vertices[i, j + 1];
+                if (i > 0)
+                    vertices[i, j].RealLeft = vertices[i - 1, j];
+                if (i < 47)
+                    vertices[i, j].RealRight = vertices[i + 1, j];
+                
+                if (i == 24 && j == 13)
+                    maze.Root = vertices[i, j];
+            }
         }
 
         return maze;
@@ -132,6 +151,10 @@ public class Space
     public bool Visited { get; set; } = false;
     public bool IsSolution { get; set; } = false;
     public bool Exit { get; set; } = false;
+    public Space RealTop { get; set; } = null;
+    public Space RealLeft { get; set; } = null;
+    public Space RealRight { get; set; } = null;
+    public Space RealBottom { get; set; } = null;
 
     public void Reset()
     {
@@ -179,6 +202,19 @@ public class MazeView : View
             {
                 update = !update;
             }
+
+            if (key == Input.A)
+            {
+                Maze.Reset();
+                this.Solver.Option++;
+            }
+
+            if (key == Input.R)
+            {
+                this.Solver.RogueMode = !this.Solver.RogueMode;
+                Maze.Reset();
+                this.Solver.Option = 0;
+            }
         });
     }
 
@@ -225,6 +261,7 @@ public class MazeView : View
         var x = space.X * dx;
         var y = space.Y * dy;
         g.FillRectangle(x, y, dx, dy,
+            space == Maze.Root ? Brushes.Yellow :
             space.Exit ? Brushes.Green :
             space.Visited ? Brushes.Blue : Brushes.White
         );
