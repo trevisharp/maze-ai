@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Media;
 
 public class Solver
 {
@@ -278,7 +277,6 @@ public class Solver
         }
         start.IsSolution = true;
     }
-
 
     private void rogueAStar(Space start, Space goal)
     {
