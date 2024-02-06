@@ -7,6 +7,29 @@ public class Solver
     public int Option { get; set; }
     public bool RogueMode { get; set; }
     public Maze Maze { get; set; }
+
+    public string Algorithm
+    {
+        get
+        {
+            if (RogueMode)
+            {
+                if (Option % 2 == 0)
+                    return "rogueDijkstra";
+                return "rogueAStar";
+            }
+            else
+            {
+                if (Option % 4 == 0)
+                    return "DFS";
+                else if (Option % 4 == 1)
+                    return "BFS";
+                else if (Option % 4 == 2)
+                    return "dijkstra";
+                else return "aStar";
+            }
+        }
+    }
     
     public void Solve()
     {
