@@ -11,7 +11,7 @@ public class Maze
             space.Reset();
     }
 
-    public static Maze Prim(int sx, int sy)
+    public static Maze Prim(int sx, int sy, bool nontree = false)
     {
         Maze maze = new Maze();
         var priority = new PriorityQueue<(int i, int j), byte>();
@@ -103,25 +103,28 @@ public class Maze
             if (min == byte.MaxValue)
                 return;
             
-            if (min == top)
+            Func<bool> nonTreeCond = () => 
+                nontree && Random.Shared.NextSingle() < 0.1f 
+                && i > 1 && i < 46 && j > 1 && j < 25;
+            if (min == top || nonTreeCond())
             {
                 var newSpace = add(i, j - 1);
                 crr.Top = newSpace;
                 newSpace.Bottom = crr;
             }
-            else if (min == lef)
+            if (min == lef || nonTreeCond())
             {
                 var newSpace = add(i - 1, j);
                 crr.Left = newSpace;
                 newSpace.Right = crr;
             }
-            else if (min == rig)
+            if (min == rig || nonTreeCond())
             {
                 var newSpace = add(i + 1, j);
                 crr.Right = newSpace;
                 newSpace.Left = crr;
             }
-            else if (min == bot)
+            if (min == bot || nonTreeCond())
             {
                 var newSpace = add(i, j + 1);
                 crr.Bottom = newSpace;

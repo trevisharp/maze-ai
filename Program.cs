@@ -6,6 +6,7 @@ App.Open(new MazeView());
 public class MazeView : View
 {
     bool help = false;
+    bool nonTreeMode = false;
     int solx = 20;
     int soly = 20;
     bool update = false;
@@ -15,7 +16,7 @@ public class MazeView : View
 
     protected override void OnStart(IGraphics g)
     {
-        this.Maze = Maze.Prim(solx, soly);
+        this.Maze = Maze.Prim(solx, soly, nonTreeMode);
         this.Solver.Maze = this.Maze;
         g.SubscribeKeyDownEvent(key =>
         {
@@ -24,7 +25,15 @@ public class MazeView : View
             
             if (key == Input.Space)
             {
-                this.Maze = Maze.Prim(solx, soly);
+                this.Maze = Maze.Prim(solx, soly, nonTreeMode);
+                this.Solver.Maze = this.Maze;
+                Invalidate();
+            }
+            
+            if (key == Input.T)
+            {
+                nonTreeMode = !nonTreeMode;
+                this.Maze = Maze.Prim(solx, soly, nonTreeMode);
                 this.Solver.Maze = this.Maze;
                 Invalidate();
             }
@@ -78,6 +87,7 @@ public class MazeView : View
             write("S - Ligar/Desligar resolução do labirinto.");
             write("U - Iniciar/Desligar atualização da saída.");
             write("A - Mudar algorítimo.");
+            write("T - Iniciar/Desligar modo não-árvore.");
             write("R - Ligar/Desligar Rogue Mode (permite-se pular paredes com custo 0, 2, 4...).");
             return;
         }

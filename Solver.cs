@@ -84,6 +84,8 @@ public class Solver
         while (queue.Count > 0)
         {
             var crr = queue.Dequeue();
+            if (crr.Visited)
+                continue;
             crr.Visited = true;
             
             if (crr == goal)
@@ -97,11 +99,11 @@ public class Solver
                 if (neighbor is null || neighbor.Visited)
                     continue;
                 
-                comeMap.Add(neighbor, crr);
+                if (!comeMap.ContainsKey(neighbor))
+                    comeMap.Add(neighbor, crr);
                 queue.Enqueue(neighbor);
             }
         }
-
         var it = goal;
         while (it != start)
         {
